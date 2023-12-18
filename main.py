@@ -14,8 +14,6 @@ def login():
         
         cursor = conn.cursor()
 
-        # WARNING: DO NOT USE IN PRODUCTION!!!
-        # This is vulnerable to SQL injection attacks.
         cursor.execute(f"SELECT * FROM users WHERE username='{username}' AND password='{password}'")
 
         user = cursor.fetchone()
