@@ -5,25 +5,31 @@ app = Flask(__name__)
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
+    message = "YOU ARE NOT ADMIN ~_~"  # Default message
+    username = ""
+    password = ""
+
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
 
         conn = sqlite3.connect('users.db')
         conn.set_trace_callback(print)
-        
         cursor = conn.cursor()
 
-        cursor.execute(f"SELECT * FROM users WHERE username='{username}' AND password='{password}'")
+        query = f"SELECT * FROM users WHERE username='{username}' AND password='{password}'"
+        print(f"Executing query: {query}") 
 
-        user = cursor.fetchone()
-        
-        if user:
-            message = "HELLO ADMIN!"
-        else:
-            message = "YOU ARE NOT ADMIN ~_~"
-    else:
-        message = "YOU ARE NOT ADMIN ~_~"
+        try:
+            cursor.execute(query)
+            user = cursor.fetchone()
+            if user:
+                message = "HELLO ADMIN!"
+        except sqlite3.OperationalError as e:
+            print(f"SQLite error: {e}")
+        finally:
+            cursor.close()
+            conn.close()
 
     return render_template_string("""
 <!DOCTYPE html>
@@ -31,9 +37,7 @@ def login():
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-
   <title>Login</title>
-
   <style>
       /* Add your CSS here */
       body {
@@ -41,30 +45,25 @@ def login():
           font-family: Courier New;
           color: #00ff00;
       }
-      
       .container {
           display: flex;
           flex-direction: column;
           align-items: center;
-          height: 100vh; 
+          height: 100vh;
       }
-      
       .card {
-         width: 600px; 
-         padding: 20px; 
+         width: 600px;
+         padding: 20px;
          border-radius: 12px;
          background-color: #222;
          box-shadow: 0px 2px 5px rgba(0, 255, 0, .2);
      }
-
      pre {
          color: #00ff00;
      }
-
      label {
          color: #00ff00;
      }
-
      input[type=text], input[type=password] {
        border: none;
        outline: none;
@@ -73,7 +72,6 @@ def login():
        padding: 10px;
        margin-bottom: 10px;
    }
-
    button[type=submit] {
     background-color: #333;
     color: #00ff00;
@@ -81,12 +79,10 @@ def login():
     border: none;
     padding: 10px;
    }
-
    .message {
     color: #ff0000;
     margin-top: 10px;
    }
-
    .admin-message {
     color: #00ff00;
     margin-top: 10px;
@@ -113,18 +109,19 @@ def login():
           <label for="username">Username</label>
           <input type="text" id="username" name="username" placeholder="Username" autocomplete="off">
 
-          <!-- Password Field -->             
+          <!-- Password Field -->
           <label for="password">Password</label>
           <input type="password" id="password" name="password" placeholder="Password" autocomplete="off">
-                  
-          <!-- Submit Button -->             
+
+          <!-- Submit Button -->
           <button type="submit">Login</button>
       </form>
    </div>
 </div>
 </body>
 </html>
-""", message=message, username=request.form.get('username', ''), password=request.form.get('password', ''))
+""", message=message, username=username, password=password)
 
 if __name__ == "__main__":
     app.run(debug=True)
+
